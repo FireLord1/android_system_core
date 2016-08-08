@@ -75,6 +75,8 @@ static int property_triggers_enabled = 0;
 #define BOARD_CHARGING_CMDLINE_VALUE "true"
 #endif
 
+static char hardware[32];
+static unsigned revision = 0;
 static char qemu[32];
 static char battchg_pause[32];
 
@@ -806,6 +808,9 @@ static void import_kernel_nv(char *name, bool for_emulator)
 }
 
 static void export_kernel_boot_props() {
+        char tmp[PROP_VALUE_MAX];
+        int ret;
+
     struct {
         const char *src_prop;
         const char *dst_prop;
@@ -817,16 +822,24 @@ static void export_kernel_boot_props() {
         { "ro.boot.mode",       "ro.bootmode",   "unknown", },
         { "ro.boot.baseband",   "ro.baseband",   "unknown", },
         { "ro.boot.bootloader", "ro.bootloader", "unknown", },
-        { "ro.boot.hardware",   "ro.hardware",   "unknown", },
-#ifndef IGNORE_RO_BOOT_REVISION
-        { "ro.boot.revision",   "ro.revision",   "0", },
-#endif
     };
     for (size_t i = 0; i < ARRAY_SIZE(prop_map); i++) {
         char value[PROP_VALUE_MAX];
         int rc = property_get(prop_map[i].src_prop, value);
         property_set(prop_map[i].dst_prop, (rc > 0) ? value : prop_map[i].default_value);
     }
+    get_hardware_name(hardware, &revision);
+    /* if this was given on kernel command line, override what we read
+     * before (e.g. from /proc/cpuinfo), if anything */
+    ret = property_get("ro.boot.hardware", tmp);
+    if (ret)
+       strlcpy(hardware, tmp, sizeof(hardware));
+       property_set("ro.hardware", hardware);
+
+    ret = property_get("ro.boot.revision", tmp);
+    if (!ret)
+       snprintf(tmp, PROP_VALUE_MAX, "%d", revision);
+       property_set("ro.revision", tmp);
 }
 
 static void process_kernel_dt(void)
