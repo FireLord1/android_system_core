@@ -440,6 +440,32 @@ void open_devnull_stdio(void)
     }
 }
 
+void get_hardware_name(char *hardware) {
+    FILE* fp = fopen("/proc/cpuinfo", "re");
+    if (fp == NULL) {
+    return;
+    }
+    char buf[1024];
+    while (fgets(buf, sizeof(buf), fp) != NULL) {
+    if (strncmp(buf, "Hardware", 8) == 0) {
+       const char* hw = strstr(buf, ": ");
+    if (hw) {
+       hw += 2;
+       size_t n = 0;
+       while (*hw) {
+         if (!isspace(*hw)) {
+            hardware[n++] = tolower(*hw);
+           }
+           hw++;
+           if (n == 31) break;
+          }
+         hardware[n] = 0;
+        }
+      }
+    }
+    fclose(fp);
+  }
+
 void import_kernel_cmdline(bool in_qemu,
                            const std::function<void(const std::string&, const std::string&, bool)>& fn) {
     std::string cmdline;

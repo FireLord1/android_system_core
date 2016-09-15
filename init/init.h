@@ -39,6 +39,8 @@ int selinux_reload_policy(void);
 
 void register_epoll_handler(int fd, void (*fn)());
 
+void get_hardware_name(char *hardware);
+
 int add_environment(const char* key, const char* val);
 
 #endif  /* _INIT_INIT_H */
